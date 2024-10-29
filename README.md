@@ -77,13 +77,13 @@ Run the script by entering "orientx" in the command line along with the followin
 ```
 
 ### Example Commands
-- To **scrape and classify posts**:
-  ```bash
-  python main.py --mode run --num_posts 20 --run_output_path assets/classified_posts.csv
-  ```
 - To **train the model**:
   ```bash
   python main.py --mode train --training_data assets/training_dataset.csv --num_epochs 5 --num_classes 3
+  ```
+- To **scrape and classify posts** (you must train a model first!):
+  ```bash
+  python main.py --mode run --num_posts 20 --run_output_path assets/classified_posts.csv
   ```
 
 ## Primary Modules
