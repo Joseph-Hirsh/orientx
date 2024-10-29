@@ -49,6 +49,8 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 6. Install the plugin
 
     ```pip install .```
+7. Add X account credentials to `assets/credentials.ini` (use an account that you would not mind getting banned!)
+
 
 ## Usage
 
