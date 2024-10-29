@@ -77,7 +77,7 @@ Run the script by entering "orientx" in the command line along with the followin
 ```
 
 ### Example Commands
-- To **train the model**:
+- To **train a model**:
   ```bash
   python main.py --mode train --training_data assets/training_dataset.csv --num_epochs 5 --num_classes 3
   ```
@@ -89,20 +89,20 @@ Run the script by entering "orientx" in the command line along with the followin
 ## Primary Modules
 
 ### scraper
-- **Description:** Uses Playwright to log in to an x.com account and scrape posts from accounts.
-- **Key Features:** Fast (considering its free) parallel scraping, error handling, x.com security evasion.
+- **Description:** uses Playwright to log in to an x.com account and scrape posts from accounts.
+- **Key Features:** fast (considering its free) parallel scraping, error handling, and x.com security evasion.
 
 ### parser
-- **Description:** Parses each post, constructing a Pandas DataFrame with each row representing a post and each column representing a data category (e.g., likes, content, poster name, etc.).
-- **Key Features:** Handles various tweet formats (normal, retweet, pinned) and standardizes date and number formats.
+- **Description:** parses each post, constructing a Pandas DataFrame with each row representing a post and each column representing a data category (e.g., likes, content, poster name, etc.).
+- **Key Features:** handles various tweet formats (normal, retweet, pinned) and standardizes date and number formats.
 
 ### classifier
-- **Description:** Classifies tweets based on BERT domain expertise.
-- **Key Features:** Fine-tunes a pre-trained BERT model with given hyperparameters, performs semantic classification with such model.
+- **Description:** classifies tweets based on BERT domain expertise.
+- **Key Features:** fine-tunes a pre-trained BERT model with given hyperparameters, performs semantic classification with such model.
 
 ### analyzer
-- **Description:** Analyzes and visualizes classified tweets.
-- **Key Features:** Outputs graphs of tweet engagement over time, statistical test results.
+- **Description:** analyzes and visualizes classified tweets.
+- **Key Features:** outputs graphs of tweet engagement over time, statistical test results.
 
 
 ## License
