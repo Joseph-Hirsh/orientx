@@ -27,7 +27,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 
 
 
-1. (Skip if you have conda) - Install Miniconda by downloading the appropriate version from [here](https://docs.anaconda.com/free/miniconda/).
+1. (Skip if you have conda) - Install Miniconda by downloading the appropriate version from [here](https://docs.anaconda.com/free/miniconda/):
 
    a. Choose the version that matches your processor.  
    
@@ -37,19 +37,19 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 2. Open a terminal, or miniconda prompt, and clone this git repository by running:
 
     ```git clone https://github.com/Joseph-Hirsh/orientx```
-3. Go to the AlveolEye directory
+3. Go to the orientx directory:
 
     ```cd orientx```
-4. Create the conda environment
+4. Create the conda environment:
 
     ```conda env create -f ./environment.yml```
-5. Activate the new environment
+5. Activate the new environment:
 
     ```conda activate orientx```
-6. Install the plugin
+6. Install the plugin:
 
     ```pip install .```
-7. Add X account credentials to `assets/credentials.ini` (use an account that you would not mind getting banned!)
+7. Add X account credentials to `assets/credentials.ini` (use an account that you would not mind getting banned!).
 
 
 ## Usage
