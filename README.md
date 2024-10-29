@@ -9,11 +9,10 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 - Installation
 - Usage
 - Modules
-  - Web Scraper
-  - Tweet Parser
-  - Classifier
-  - Analyzer
-  - Date Parser
+  - scraper
+  - parser
+  - classifier
+  - analyzer
 - License
 - Acknowledgments
 
