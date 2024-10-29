@@ -28,9 +28,13 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 
 If you already have conda setup, you can skip step 1.
 
-1. Install miniconda by downloading the appropriate version from [here](https://docs.anaconda.com/free/miniconda/)
-   a. Choose the version that matches your processor.
+1. Install Miniconda by downloading the appropriate version from [here](https://docs.anaconda.com/free/miniconda/).
+
+   a. Choose the version that matches your processor.  
+   
    b. Download the "pkg" version for easy install.
+
+
 2. Open a terminal, or miniconda prompt, and clone this git repository by running:
 
     ```git clone https://github.com/Joseph-Hirsh/orientx```
