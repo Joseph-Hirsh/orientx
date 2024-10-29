@@ -6,7 +6,6 @@ from orientx import config
 from orientx.scraper import scrape_x_accounts
 from orientx.parser import parse_x_posts
 from orientx.classifier import classify_x_posts, load_data, ClassificationPipeline
-from orientx.printer import print_driver_df
 
 
 def parse_arguments():
@@ -106,7 +105,7 @@ def validate_arguments(args):
         raise ValueError(f"model_path '{args.model_path}' must be a valid file path.")
 
     if not os.path.isdir(os.path.dirname(args.run_output_path)):
-        raise ValueError(f"run_output_path '{args.run_output_path}' must be a valid directory path.")
+        os.makedirs(os.path.dirname(args.run_output_path))
 
     if args.mode == 'train' and not os.path.isfile(args.training_data):
         raise ValueError(f"training_data '{args.training_data}' must be a valid file path.")
@@ -115,7 +114,7 @@ def validate_arguments(args):
         raise ValueError("num_epochs must be an integer greater than or equal to 1.")
 
     if not os.path.isdir(os.path.dirname(args.train_output_path)):
-        raise ValueError(f"train_output_path '{args.train_output_path}' must be a valid directory path.")
+        os.makedirs(os.path.dirname(args.train_output_path))
 
     if not (isinstance(args.max_length, int) and args.max_length >= 1):
         raise ValueError("max_length must be an integer greater than or equal to 1.")
@@ -125,6 +124,7 @@ def validate_arguments(args):
 
     if not (isinstance(args.learning_rate, float) and args.learning_rate >= 0):
         raise ValueError("learning_rate must be a non-negative float.")
+
 
 
 def run_orientx(args):

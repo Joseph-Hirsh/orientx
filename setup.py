@@ -6,12 +6,11 @@ with open("requirements.txt") as f:
 setup(
     name="orientx",
     version="0.1",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
+    packages=find_packages(),
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "orientx=main:main",
+            "orientx=orientx.main:main",
         ],
     },
 )
