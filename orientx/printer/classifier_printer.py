@@ -27,7 +27,7 @@ def print_classifier_training_complete(accuracy, report, train_output_path):
     if config.VERBOSE:
         pretty_print("[+] Training complete:")
         pretty_print(report)
-        pretty_print(f"Validation accuracy = {accuracy}; model saved to {train_output_path}")
+        pretty_print(f"validation accuracy = {accuracy}; model saved to {train_output_path}")
 
 
 def print_classifier_classify_heading(posts_df):
