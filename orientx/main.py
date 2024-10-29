@@ -95,26 +95,32 @@ def parse_arguments():
 
 
 def validate_arguments(args):
+    current_dir = os.getcwd()
+
     if not (isinstance(args.num_posts, int) and args.num_posts >= 1):
         raise ValueError("num_posts must be an integer greater than or equal to 1.")
 
     if not (isinstance(args.num_classes, int) and args.num_classes >= 1):
         raise ValueError("num_classes must be an integer greater than or equal to 1.")
 
-    if not os.path.isfile(args.model_path):
-        raise ValueError(f"model_path '{args.model_path}' must be a valid file path.")
+    if args.mode == 'run':
+        model_path = args.model_path
+        full_model_path = os.path.join(current_dir, model_path)
+        if not os.path.isfile(full_model_path):
+            raise ValueError(f"model_path '{full_model_path}' must be a valid file path.")
 
-    if not os.path.isdir(os.path.dirname(args.run_output_path)):
-        os.makedirs(os.path.dirname(args.run_output_path))
+    os.makedirs(os.path.dirname(args.run_output_path), exist_ok=True)
 
-    if args.mode == 'train' and not os.path.isfile(args.training_data):
-        raise ValueError(f"training_data '{args.training_data}' must be a valid file path.")
+    if args.mode == 'train':
+        training_data = args.training_data
+        full_training_data_path = os.path.join(current_dir, training_data)
+        if not os.path.isfile(full_training_data_path):
+            raise ValueError(f"training_data '{full_training_data_path}' must be a valid file path.")
 
     if not (isinstance(args.num_epochs, int) and args.num_epochs >= 1):
         raise ValueError("num_epochs must be an integer greater than or equal to 1.")
 
-    if not os.path.isdir(os.path.dirname(args.train_output_path)):
-        os.makedirs(os.path.dirname(args.train_output_path))
+    os.makedirs(os.path.dirname(args.train_output_path), exist_ok=True)
 
     if not (isinstance(args.max_length, int) and args.max_length >= 1):
         raise ValueError("max_length must be an integer greater than or equal to 1.")
@@ -124,7 +130,6 @@ def validate_arguments(args):
 
     if not (isinstance(args.learning_rate, float) and args.learning_rate >= 0):
         raise ValueError("learning_rate must be a non-negative float.")
-
 
 
 def run_orientx(args):
