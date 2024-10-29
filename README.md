@@ -1,7 +1,9 @@
-# Semantic Orientation Analyzer
+# OrientX
+
+*Note: This project is nascent. It lacks sufficient printing/logging, error handling, documentation, unit tests, and config files for constants. One can also imagine numerous feature and user-experience updates.*
 
 ## Project Overview
-OrientX is a Python-based tool designed to classify x.com posts. Though initially developed to support a study on input-oriented and output-oriented rhetorical modes in political posts, it can serve as an analytical tool for numerous other endeavours that dammand efficient and free x.com scraping, parsing, classification, and analyses.
+OrientX is a Python-based tool designed to classify x.com posts. Though initially developed to support a study on input-oriented and output-oriented rhetorical modes in populist social media posts, it can serve as an analytical tool for numerous other purposes that demand efficient and free x.com scraping, parsing, classification, and analyses.
 
 ## Table of Contents
 - Project Overview
@@ -49,7 +51,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 6. Install the plugin:
 
     ```pip install .```
-7. Add X account credentials to `assets/credentials.ini` (use an account that you would not mind getting banned!).
+7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. 
 
 
 ## Usage
@@ -72,7 +74,8 @@ Run the script by entering "orientx" in the command line along with the followin
   --train_output_path TRAIN_OUTPUT_PATH
                                   Path to save the trained model (default: assets/model.pth).
   --max_length MAX_LENGTH        Maximum sequence length (default: 128).
-  --batch_size BATCH_SIZE        Batch size for training (default: 16).
+  --trainbatch_size BATCH_SIZE        Batch size for training (default: 16).
+  --scrape_batch_size SCRAPE_BATCH_SIZE        Batch size for scraping accounts in parallel (default: 2)
   --learning_rate LEARNING_RATE  Learning rate (default: 2e-5).
 ```
 

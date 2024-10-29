@@ -3,6 +3,8 @@ import asyncio
 import json
 import os
 from orientx import config
+from orientx.analyzer import calculate_percentages, visualize_percentages
+from orientx.printer import print_driver_df
 from orientx.scraper import scrape_x_accounts
 from orientx.parser import parse_x_posts
 from orientx.classifier import classify_x_posts, load_data, ClassificationPipeline
@@ -27,8 +29,8 @@ def parse_arguments():
     parser.add_argument(
         '--accounts',
         type=str,
-        default='{"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en"}',
-        help='JSON string for user dictionary (default: {"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en"})'
+        default='{"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en", "UKIP": "https://x.com/ukip?lang=en"}',
+        help='JSON string for user dictionary (default: {"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en", "UKIP": "https://x.com/ukip?lang=en"})'
     )
     parser.add_argument(
         '--num_posts',
@@ -79,10 +81,16 @@ def parse_arguments():
         help='Maximum sequence length (default: 128)'
     )
     parser.add_argument(
-        '--batch_size',
+        '--train_batch_size',
         type=int,
         default=16,
         help='Batch size for training (default: 16)'
+    )
+    parser.add_argument(
+        '--scrape_batch_size',
+        type=int,
+        default=2,
+        help='Batch size for scraping accounts in parallel (default: 2)'
     )
     parser.add_argument(
         '--learning_rate',
@@ -125,8 +133,11 @@ def validate_arguments(args):
     if not (isinstance(args.max_length, int) and args.max_length >= 1):
         raise ValueError("max_length must be an integer greater than or equal to 1.")
 
-    if not (isinstance(args.batch_size, int) and args.batch_size >= 1):
-        raise ValueError("batch_size must be an integer greater than or equal to 1.")
+    if not (isinstance(args.train_batch_size, int) and args.train_batch_size >= 1):
+        raise ValueError("train_batch_size must be an integer greater than or equal to 1.")
+
+    if not (isinstance(args.scrape_batch_size, int) and args.scrape_batch_size >= 1):
+        raise ValueError("scrape_batch_size must be an integer greater than or equal to 1.")
 
     if not (isinstance(args.learning_rate, float) and args.learning_rate >= 0):
         raise ValueError("learning_rate must be a non-negative float.")
@@ -139,16 +150,15 @@ def run_orientx(args):
     pipeline.load_model(args.model_path)
 
     async def async_main():
-        scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts)
+        scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts, batch_size=args.scrape_batch_size)
         parsed_df = parse_x_posts(scraped_data)
         classifications_df = classify_x_posts(pipeline, parsed_df)
+
         classifications_df.to_csv(args.run_output_path, index=False)
+        print_driver_df("Classified Posts", classifications_df)
 
-        #print_driver_df("Classified Posts", classifications_df)
-        filtered_df = classifications_df[classifications_df['pinned'] == True]
-
-        # Print the filtered DataFrame
-        print(filtered_df)
+        df_percentages = calculate_percentages(classifications_df)
+        visualize_percentages(df_percentages)
 
     asyncio.run(async_main())
 
@@ -160,7 +170,7 @@ def train_orientx(args):
         model_name='bert-base-uncased',
         num_classes=args.num_classes,
         max_length=args.max_length,
-        batch_size=args.batch_size,
+        batch_size=args.train_batch_size,
         lr=args.learning_rate,
         epochs=args.num_epochs
     )

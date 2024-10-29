@@ -6,11 +6,16 @@ from playwright.async_api import async_playwright
 from ..printer import print_scraper_no_posts_found, print_scraper_metrics, print_scraper_new_scrape_heading
 
 
-async def load_credentials():
+async def load_credentials(account_index):
     config = configparser.ConfigParser()
     config.read("assets/credentials.ini")
+    account_keys = [section for section in config.sections() if section.startswith("login_")]
 
-    return config["login"]["username"], config["login"]["password"], config["login"]["email"]
+    if account_index >= len(account_keys):
+        raise IndexError("Account index out of range. Not enough accounts in credentials.ini.")
+
+    account_section = account_keys[account_index]
+    return config[account_section]["username"], config[account_section]["password"], config[account_section]["email"]
 
 
 async def initialize_browser(headless=False):
@@ -69,14 +74,14 @@ async def scrape_posts(page, url, num_posts=100):
                 break
 
         await page.evaluate("window.scrollBy(0, window.innerHeight);")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.6)
 
     return complete_posts[:num_posts]
 
 
-async def login_and_scrape_x_posts(account_id, url, num_posts=100, headless=False):
+async def login_and_scrape_x_posts(account_id, url, num_posts=100, headless=False, account_index=0):
     print_scraper_new_scrape_heading(account_id, num_posts)
-    username, password, email = await load_credentials()
+    username, password, email = await load_credentials(account_index)
 
     try:
         playwright, browser, context = await initialize_browser(headless=headless)
@@ -92,28 +97,29 @@ async def login_and_scrape_x_posts(account_id, url, num_posts=100, headless=Fals
 
     except Exception as e:
         print(f"Error in login_and_scrape_x_posts for {account_id}: {e}")
-
         return []
 
 
-async def scrape_x_accounts(accounts, num_posts=100, headless=False):
+async def scrape_x_accounts(accounts, num_posts=100, batch_size=2, headless=False):
     start_time = time.time()
+    scraped_posts = {}
 
-    try:
+    account_items = list(accounts.items())
+
+    for i in range(0, len(account_items), batch_size):
+        batch = account_items[i:i + batch_size]
+
         tasks = [
             login_and_scrape_x_posts(account_id, url, num_posts=num_posts, headless=headless)
-            for account_id, url in accounts.items()
+            for account_id, url in batch
         ]
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    except Exception as e:
-        print(f"Error in scrape_x_accounts: {e}")
-        results = []
+        scraped_posts.update(dict(zip([account_id for account_id, _ in batch], results)))
 
     end_time = time.time()
-
-    scraped_posts = dict(zip(accounts.keys(), results))
-
     print_scraper_metrics(end_time, start_time, scraped_posts, num_posts * len(accounts))
 
     return scraped_posts
+
