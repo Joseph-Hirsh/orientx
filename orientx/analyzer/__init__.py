@@ -1,3 +1,3 @@
-from .simple_analyses import calculate_percentages, visualize_percentages
+from .simple_analyses import analyze_posts_data
 
-__all__ = ["calculate_percentages", "visualize_percentages"]
+__all__ = ["analyze_posts_data"]

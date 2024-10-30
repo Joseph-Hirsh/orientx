@@ -10,11 +10,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 - Features
 - Installation
 - Usage
-- Modules
-  - scraper
-  - parser
-  - classifier
-  - analyzer
+- Module descriptions
 - License
 - Acknowledgments
 
@@ -56,38 +52,52 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 
 ## Usage
 
-Run the script by entering "orientx" in the command line along with the following options:
+### Run everything at once:
+
+Run the entire scraper > parser > classifier > analyzer pipeline using this command:
 
 ```plaintext
-  -h, --help                     Show this help message and exit.
-  --verbose                      Enable verbose output.
-  --mode {run,train}             Mode of operation: "run" to scrape and classify (default), "train" to train the model.
-  --accounts ACCOUNTS            JSON string for user dictionary (default: {"Labour": "https://x.com/uklabour?lang=en", "Reform":
-                                  "https://x.com/reformparty_uk?lang=en"}).
-  --num_posts NUM_POSTS          Number of posts to scrape per account (default: 10).
-  --num_classes NUM_CLASSES      Number of classification classes (default: 3).
-  --model_path MODEL_PATH        Path to the model file (default: assets/model.pth).
-  --run_output_path RUN_OUTPUT_PATH
-                                  Path to save classified posts CSV (default: assets/classified_posts.csv).
-  --training_data TRAINING_DATA  Path to the training dataset CSV file (required for training mode).
-  --num_epochs NUM_EPOCHS        Number of epochs for training (default: 10).
-  --train_output_path TRAIN_OUTPUT_PATH
-                                  Path to save the trained model (default: assets/model.pth).
-  --max_length MAX_LENGTH        Maximum sequence length (default: 128).
-  --trainbatch_size BATCH_SIZE        Batch size for training (default: 16).
-  --scrape_batch_size SCRAPE_BATCH_SIZE        Batch size for scraping accounts in parallel (default: 2)
-  --learning_rate LEARNING_RATE  Learning rate (default: 2e-5).
+  usage: orientx [-h] [--accounts ACCOUNTS] [--num_posts NUM_POSTS] [--scrape_batch_size SCRAPE_BATCH_SIZE] [--scroll_mode {manual,auto}] [--mode {inference,train}]
+               [--num_classes NUM_CLASSES] [--model_path MODEL_PATH] [--learning_rate LEARNING_RATE] [--max_input_length MAX_INPUT_LENGTH] [--test_size TEST_SIZE]
+               [--train_batch_size TRAIN_BATCH_SIZE] [--num_epochs NUM_EPOCHS] [--train_output_path TRAIN_OUTPUT_PATH] [--training_data TRAINING_DATA] [--output_path OUTPUT_PATH]
+               [--quiet]
 ```
 
-### Example Commands
-- To **train a model**:
-  ```bash
-  python main.py --mode train --training_data assets/training_dataset.csv --num_epochs 5 --num_classes 3
-  ```
-- To **scrape and classify posts** (you must train a model first!):
-  ```bash
-  python main.py --mode run --num_posts 20 --run_output_path assets/classified_posts.csv
-  ```
+### Recommended: Run each module at a time 
+
+Note: This will save the results of each, allowing you to rerun parts of the pipeline with different parameters.
+
+Run the scraper:
+
+```plaintext
+  usage: orientx-scrape [-h] [--accounts ACCOUNTS] [--num_posts NUM_POSTS] [--scrape_batch_size SCRAPE_BATCH_SIZE] [--scroll_mode {manual,auto}] [--output_path OUTPUT_PATH]
+                      [--quiet]
+```
+
+Run the parser (use the output path of a scrape job as the input path):
+
+```plaintext
+  usage: orientx-parse [-h] [--input_path INPUT_PATH] [--output_path OUTPUT_PATH] [--quiet]
+```
+
+Run the classifier (use the output path of a parse job as the input path):
+
+```plaintext
+  usage: orientx-classify [-h] [--mode {inference,train}] [--num_classes NUM_CLASSES] [--model_path MODEL_PATH] [--learning_rate LEARNING_RATE]
+                        [--max_input_length MAX_INPUT_LENGTH] [--test_size TEST_SIZE] [--train_batch_size TRAIN_BATCH_SIZE] [--num_epochs NUM_EPOCHS]
+                        [--train_output_path TRAIN_OUTPUT_PATH] [--training_data TRAINING_DATA] [--input_path INPUT_PATH] [--quiet]
+```
+
+Run the analyzer (use the output path of a classifier job as the input path):
+
+```plaintext
+  usage: orientx-analyze [-h] [--input_path INPUT_PATH] [--quiet]
+```
+
+### Example
+```plaintext
+  coming soon
+```
 
 ## Primary Modules
 

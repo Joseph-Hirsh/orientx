@@ -23,7 +23,7 @@ def load_data(filepath, test_size=0.2, shuffle=True):
                 print_classifier_loading_failed(row)
 
     train_texts, val_texts, train_labels, val_labels = train_test_split(
-        texts, labels, test_size=test_size, random_state=42, shuffle=shuffle
+        texts, labels, test_size=float(test_size), random_state=42, shuffle=shuffle
     )
 
     return (train_texts, train_labels), (val_texts, val_labels)

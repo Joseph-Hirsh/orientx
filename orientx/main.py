@@ -1,146 +1,14 @@
-import argparse
-import asyncio
+# orientx.main.py
 import json
-import os
+import asyncio
+
 from orientx import config
-from orientx.analyzer import calculate_percentages, visualize_percentages
-from orientx.printer import print_driver_df
+from orientx.arguments import create_parser, validate_arguments
+from orientx.analyzer import analyze_posts_data
+from orientx.printer import print_driver_df, print_parameters
 from orientx.scraper import scrape_x_accounts
 from orientx.parser import parse_x_posts
 from orientx.classifier import classify_x_posts, load_data, ClassificationPipeline
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Train classifier and scrape, parse, and classify posts!"
-    )
-
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose output'
-    )
-    parser.add_argument(
-        '--mode',
-        choices=['run', 'train'],
-        default='run',
-        help='Mode of operation: "run" to scrape and classify (default), "train" to train the model.'
-    )
-    parser.add_argument(
-        '--accounts',
-        type=str,
-        default='{"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en", "UKIP": "https://x.com/ukip?lang=en"}',
-        help='JSON string for user dictionary (default: {"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en", "UKIP": "https://x.com/ukip?lang=en"})'
-    )
-    parser.add_argument(
-        '--num_posts',
-        type=int,
-        default=10,
-        help='Number of posts to scrape per account (default: 10)'
-    )
-    parser.add_argument(
-        '--num_classes',
-        type=int,
-        default=3,
-        help='Number of classification classes (default: 3)'
-    )
-    parser.add_argument(
-        '--model_path',
-        type=str,
-        default='assets/model.pth',
-        help='Path to the model file (default: assets/model.pth)'
-    )
-    parser.add_argument(
-        '--run_output_path',
-        type=str,
-        default='assets/classified_posts.csv',
-        help='Path to save classified posts CSV (default: assets/classified_posts.csv)'
-    )
-    parser.add_argument(
-        '--training_data',
-        type=str,
-        default='assets/training_dataset.csv',
-        help='Path to the training dataset CSV file (required for training mode)'
-    )
-    parser.add_argument(
-        '--num_epochs',
-        type=int,
-        default=10,
-        help='Number of epochs for training (default: 10)'
-    )
-    parser.add_argument(
-        '--train_output_path',
-        type=str,
-        default='assets/model.pth',
-        help='Path to save the trained model (default: assets/model.pth)'
-    )
-    parser.add_argument(
-        '--max_length',
-        type=int,
-        default=128,
-        help='Maximum sequence length (default: 128)'
-    )
-    parser.add_argument(
-        '--train_batch_size',
-        type=int,
-        default=16,
-        help='Batch size for training (default: 16)'
-    )
-    parser.add_argument(
-        '--scrape_batch_size',
-        type=int,
-        default=2,
-        help='Batch size for scraping accounts in parallel (default: 2)'
-    )
-    parser.add_argument(
-        '--learning_rate',
-        type=float,
-        default=2e-5,
-        help='Learning rate (default: 2e-5)'
-    )
-
-    return parser.parse_args()
-
-
-def validate_arguments(args):
-    current_dir = os.getcwd()
-
-    if not (isinstance(args.num_posts, int) and args.num_posts >= 1):
-        raise ValueError("num_posts must be an integer greater than or equal to 1.")
-
-    if not (isinstance(args.num_classes, int) and args.num_classes >= 1):
-        raise ValueError("num_classes must be an integer greater than or equal to 1.")
-
-    if args.mode == 'run':
-        model_path = args.model_path
-        full_model_path = os.path.join(current_dir, model_path)
-        if not os.path.isfile(full_model_path):
-            raise ValueError(f"model_path '{full_model_path}' must be a valid file path.")
-
-    os.makedirs(os.path.dirname(args.run_output_path), exist_ok=True)
-
-    if args.mode == 'train':
-        training_data = args.training_data
-        full_training_data_path = os.path.join(current_dir, training_data)
-        if not os.path.isfile(full_training_data_path):
-            raise ValueError(f"training_data '{full_training_data_path}' must be a valid file path.")
-
-    if not (isinstance(args.num_epochs, int) and args.num_epochs >= 1):
-        raise ValueError("num_epochs must be an integer greater than or equal to 1.")
-
-    os.makedirs(os.path.dirname(args.train_output_path), exist_ok=True)
-
-    if not (isinstance(args.max_length, int) and args.max_length >= 1):
-        raise ValueError("max_length must be an integer greater than or equal to 1.")
-
-    if not (isinstance(args.train_batch_size, int) and args.train_batch_size >= 1):
-        raise ValueError("train_batch_size must be an integer greater than or equal to 1.")
-
-    if not (isinstance(args.scrape_batch_size, int) and args.scrape_batch_size >= 1):
-        raise ValueError("scrape_batch_size must be an integer greater than or equal to 1.")
-
-    if not (isinstance(args.learning_rate, float) and args.learning_rate >= 0):
-        raise ValueError("learning_rate must be a non-negative float.")
 
 
 def run_orientx(args):
@@ -150,15 +18,15 @@ def run_orientx(args):
     pipeline.load_model(args.model_path)
 
     async def async_main():
-        scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts, batch_size=args.scrape_batch_size)
+        scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts,
+                                               batch_size=args.scrape_batch_size, scroll_mode=args.scroll_mode)
         parsed_df = parse_x_posts(scraped_data)
         classifications_df = classify_x_posts(pipeline, parsed_df)
 
-        classifications_df.to_csv(args.run_output_path, index=False)
+        classifications_df.to_csv(args.output_path, index=False)
         print_driver_df("Classified Posts", classifications_df)
 
-        df_percentages = calculate_percentages(classifications_df)
-        visualize_percentages(df_percentages)
+        analyze_posts_data(classifications_df)
 
     asyncio.run(async_main())
 
@@ -169,7 +37,7 @@ def train_orientx(args):
     pipeline = ClassificationPipeline(
         model_name='bert-base-uncased',
         num_classes=args.num_classes,
-        max_length=args.max_length,
+        max_length=args.max_input_length,
         batch_size=args.train_batch_size,
         lr=args.learning_rate,
         epochs=args.num_epochs
@@ -180,10 +48,12 @@ def train_orientx(args):
 
 
 def main():
-    args = parse_arguments()
-    config.VERBOSE = args.verbose
-
+    parser = create_parser(module_name='main')
+    args = parser.parse_args()
     validate_arguments(args)
+
+    config.QUIET = args.quiet
+    print_parameters(args)
 
     if args.mode == 'train':
         train_orientx(args)

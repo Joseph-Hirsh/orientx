@@ -6,3 +6,5 @@ playwright
 torch
 transformers
 matplotlib
+seaborn
+wordcloud

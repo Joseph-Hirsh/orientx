@@ -3,18 +3,18 @@ from .pretty_printer import pretty_print
 
 
 def print_parser_heading(posts, account_id):
-    if config.VERBOSE:
+    if not config.QUIET:
         pretty_print(f"[i] Parsing {len(posts)} posts from {account_id}")
 
 
 def print_parser_error(lines, error_message):
-    if config.VERBOSE:
+    if not config.QUIET:
         pretty_print(f"[-] Error parsing post: {lines}")
         pretty_print(f"    Reason: {error_message}\n")
 
 
 def print_parser_completed(end_time, start_time, successfully_parsed, total_posts, parsed_tweets):
-    if config.VERBOSE:
+    if not config.QUIET:
         elapsed_time = end_time - start_time
         posts_per_second = successfully_parsed / elapsed_time if elapsed_time > 0 else 0
         success_rate = (successfully_parsed / total_posts) * 100 if total_posts > 0 else 0
