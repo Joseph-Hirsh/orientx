@@ -64,7 +64,7 @@ Run the entire scraper > parser > classifier > analyzer pipeline using this comm
                [--quiet]
 ```
 
-### Recommended: Run each module at a time 
+### Recommended - Run each module at a time: 
 
 Note: This will save the results of each, allowing you to rerun parts of the pipeline with different parameters.
 
