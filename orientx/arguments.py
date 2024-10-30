@@ -1,32 +1,94 @@
 import argparse
 import os
+import json
+
+from orientx.printer import print_argument_error
 
 
-def validate_arguments(args):
-    pass
-    # current_dir = os.getcwd()
-    #
-    # if hasattr(args, 'num_posts') and not (isinstance(args.num_posts, int) and args.num_posts >= 1):
-    #     raise ValueError("num_posts must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'num_classes') and not (isinstance(args.num_classes, int) and args.num_classes >= 1):
-    #     raise ValueError("num_classes must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'mode') and args.mode == 'run':
-    #     model_path = args.model_path
-    #     full_model_path = os.path.join(current_dir, model_path)
-    #     if not os.path.isfile(full_model_path):
-    #         raise ValueError(f"model_path '{full_model_path}' must be a valid file path.")
-    # if hasattr(args, 'num_epochs') and not (isinstance(args.num_epochs, int) and args.num_epochs >= 1):
-    #     raise ValueError("num_epochs must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'max_input_length') and not (isinstance(args.max_input_length, int) and args.max_input_length >= 1):
-    #     raise ValueError("max_input_length must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'train_batch_size') and not (
-    #         isinstance(args.train_batch_size, int) and args.train_batch_size >= 1):
-    #     raise ValueError("train_batch_size must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'scrape_batch_size') and not (
-    #         isinstance(args.scrape_batch_size, int) and args.scrape_batch_size >= 1):
-    #     raise ValueError("scrape_batch_size must be an integer greater than or equal to 1.")
-    # if hasattr(args, 'learning_rate') and not (isinstance(args.learning_rate, float) and args.learning_rate >= 0):
-    #     raise ValueError("learning_rate must be a non-negative float.")
+def validate_arguments(args, module_name):
+    def check_and_convert_path(attr):
+        if hasattr(args, attr):
+            setattr(args, attr, os.path.abspath(getattr(args, attr)))
+
+    for path_attr in ['output_path', 'input_path', 'model_path', 'train_output_path', 'training_data']:
+        check_and_convert_path(path_attr)
+
+    if hasattr(args, 'accounts'):
+        try:
+            json.loads(args.accounts)
+        except json.JSONDecodeError:
+            print_argument_error(f"Invalid JSON string for accounts: {args.accounts}")
+            exit()
+
+    for attr in ['num_posts', 'scrape_batch_size', 'train_batch_size', 'num_epochs']:
+        if hasattr(args, attr) and getattr(args, attr) < 1:
+            print_argument_error(f"{attr} must be an integer greater than or equal to 1, got {getattr(args, attr)}")
+            exit()
+
+    if hasattr(args, 'scroll_mode') and args.scroll_mode not in ['manual', 'auto']:
+        print_argument_error(f"scroll_mode must be 'manual' or 'auto', got {args.scroll_mode}")
+        exit()
+
+    if hasattr(args, 'output_path'):
+        classifier_output_dir = os.path.dirname(args.output_path)
+        if not os.path.exists(classifier_output_dir):
+            print_argument_error(f"Output path directory does not exist for classifier: {classifier_output_dir}")
+            exit()
+
+    if hasattr(args, 'input_path'):
+        if module_name in ['classifier', 'analyzer']:
+            if not (os.path.isfile(args.input_path) and args.input_path.endswith('.csv')):
+                print_argument_error(
+                    f"input_path must be a valid existing .csv file for {module_name}, got {args.input_path}")
+                exit()
+        elif module_name == 'parser':
+            if not (os.path.isfile(args.input_path) and args.input_path.endswith('.json')):
+                print_argument_error(
+                    f"input_path must be a valid existing .json file for {module_name}, got {args.input_path}")
+                exit()
+
+    if hasattr(args, 'mode') and args.mode not in ['inference', 'train']:
+        print_argument_error(f"mode must be 'inference' or 'train', got {args.mode}")
+        exit()
+
+    if hasattr(args, 'num_classes') and args.num_classes < 2:
+        print_argument_error(f"num_classes must be an integer greater than or equal to 2, got {args.num_classes}")
+        exit()
+
+    if hasattr(args, 'model_path'):
+        if not (args.model_path.endswith('.pth') and os.path.isfile(args.model_path)):
+            print_argument_error(f"model_path must be a valid path to a .pth file, got {args.model_path}")
+            exit()
+
+    if hasattr(args, 'learning_rate') and args.learning_rate <= 0:
+        print_argument_error(f"learning_rate must be a float greater than 0, got {args.learning_rate}")
+        exit()
+
+    if hasattr(args, 'max_input_length') and args.max_input_length < 1:
+        print_argument_error(
+            f"max_input_length must be an integer greater than or equal to 1, got {args.max_input_length}")
+        exit()
+
+    if hasattr(args, 'test_size') and not (0 < args.test_size < 1):
+        print_argument_error(f"test_size must be a float between 0 and 1, got {args.test_size}")
+        exit()
+
+    if hasattr(args, 'train_output_path'):
+        train_output_dir = os.path.dirname(args.train_output_path)
+        if not os.path.exists(train_output_dir):
+            print_argument_error(f"train_output_path directory does not exist: {train_output_dir}")
+            exit()
+
+    if hasattr(args, 'training_data') and (
+            not os.path.isfile(args.training_data) or not args.training_data.endswith('.csv')):
+        print_argument_error(f"training_data must be a valid path to an existing .csv file, got {args.training_data}")
+        exit()
+
+    if hasattr(args, 'output_path'):
+        classifier_output_dir = os.path.dirname(args.output_path)
+        if not os.path.exists(classifier_output_dir):
+            print_argument_error(f"Output path directory does not exist for classifier: {classifier_output_dir}")
+            exit()
 
 
 def add_scraper_arguments(argument_parser, individual=True):
@@ -113,6 +175,7 @@ def add_classifier_arguments(argument_parser, individual=True):
     )
     argument_parser.add_argument(
         '--test_size',
+        type=float,
         default=0.2,
         help='Fraction of training data used for evaluating the model (default: 0.2)'
     )
@@ -181,12 +244,13 @@ def create_parser(module_name):
         add_parser_arguments(argument_parser)
     elif module_name == "classifier":
         add_classifier_arguments(argument_parser)
-    elif module_name == 'analyzer':
+    elif module_name == "analyzer":
         add_analyzer_arguments(argument_parser)
     elif module_name == "main":
-        add_scraper_arguments(argument_parser, individual=False)
-        add_parser_arguments(argument_parser, individual=False)
-        add_classifier_arguments(argument_parser, individual=False)
+        add_scraper_arguments(argument_parser, False)
+        add_parser_arguments(argument_parser, False)
+        add_classifier_arguments(argument_parser, False)
+        add_analyzer_arguments(argument_parser, False)
 
     add_silence_argument(argument_parser)
 

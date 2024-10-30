@@ -3,7 +3,7 @@ import pandas as pd
 from orientx import config
 from orientx.arguments import create_parser, validate_arguments
 from orientx.classifier import ClassificationPipeline, load_data, classify_x_posts
-from orientx.printer import print_parameters
+from orientx.printer import print_parameters, print_driver_df
 
 
 def inference(args):
@@ -14,6 +14,7 @@ def inference(args):
 
     classifications_df = classify_x_posts(pipeline, parsed_posts_df)
     classifications_df.to_csv(args.output_path, index=False)
+    print_driver_df("Classified Posts", classifications_df)
 
 
 def train(args):
@@ -33,9 +34,9 @@ def train(args):
 
 
 def main():
-    parser = create_parser(module_name='classifier')
+    parser = create_parser('classifier')
     args = parser.parse_args()
-    validate_arguments(args)
+    validate_arguments(args, 'classifier')
 
     config.QUIET = args.quiet
     print_parameters(args)

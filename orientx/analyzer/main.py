@@ -7,9 +7,9 @@ from .simple_analyses import analyze_posts_data
 
 
 def main():
-    parser = create_parser(module_name='analyzer')
+    parser = create_parser('analyzer')
     args = parser.parse_args()
-    validate_arguments(args)
+    validate_arguments(args, 'analyzer')
 
     config.QUIET = args.quiet
     print_parameters(args)

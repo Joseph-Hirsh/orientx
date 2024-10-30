@@ -48,9 +48,9 @@ def train_orientx(args):
 
 
 def main():
-    parser = create_parser(module_name='main')
+    parser = create_parser('main')
     args = parser.parse_args()
-    validate_arguments(args)
+    validate_arguments(args, 'main')
 
     config.QUIET = args.quiet
     print_parameters(args)

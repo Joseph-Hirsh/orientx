@@ -15,3 +15,8 @@ def print_parameters(args):
         pretty_print("\n")
     else:
         pretty_print("Running in quiet mode...")
+
+
+def print_argument_error(error):
+    pretty_print(f"[!] {error}")
+

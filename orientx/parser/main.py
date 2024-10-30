@@ -10,7 +10,7 @@ from .posts_parser import parse_x_posts
 def main():
     parser = create_parser(module_name='parser')
     args = parser.parse_args()
-    validate_arguments(args)
+    validate_arguments(args, 'parser')
 
     config.QUIET = args.quiet
     print_parameters(args)

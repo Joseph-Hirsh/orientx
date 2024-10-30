@@ -10,7 +10,7 @@ from .scraper import scrape_x_accounts
 async def async_main():
     parser = create_parser(module_name='scraper')
     args = parser.parse_args()
-    validate_arguments(args)
+    validate_arguments(args, 'scraper')
 
     config.QUIET = args.quiet
     print_parameters(args)
