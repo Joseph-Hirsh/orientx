@@ -47,7 +47,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 6. Install the plugin:
 
     ```pip install .```
-7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. 
+7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. It is advised to add more than one account.
 
 8. You may be asked to enter `playwright install` when you scrape for the first time. You can do that now, or when prompted. 
 
