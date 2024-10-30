@@ -49,6 +49,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
     ```pip install .```
 7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. 
 
+8. You may be asked to enter `playwright install` when you scrape for the first time. You can do that now, or when prompted. 
 
 ## Usage
 
@@ -95,7 +96,7 @@ Run the analyzer (use the output path of a classifier job as the input path):
 ```
 
 ### Example
-Recommended for understanding the program: enter each command with args in sequence:
+Recommended for understanding the program: enter each command with args in sequence (enter "playwright install" if prompted):
 ```plaintext
   orientx-classify --mode train --num_classes 3 --learning_rate 2e-5 --max_input_length 128 --test_size 0.2 --train_batch_size 16 --num_epochs 10 --train_output_path assets/model.pth --training_data assets/training_dataset.csv
   orientx-scrape --accounts '{"Labour": "https://x.com/uklabour?lang=en", "Reform": "https://x.com/reformparty_uk?lang=en", "UKIP": "https://x.com/ukip?lang=en"}' --num_posts 10 --scrape_batch_size 2 --scroll_mode auto --output_path assets/scraped_posts.json
@@ -103,7 +104,7 @@ Recommended for understanding the program: enter each command with args in seque
   orientx-classify --mode inference --num_classes 3 --model_path assets/model.pth --input_path assets/parsed_posts.csv --output_path assets/classified_posts.csv
   orientx-analyze --input_path assets/classified_posts.csv
 ```
-Alternatively, to run with defaults:
+Alternatively, to run with defaults (enter "playwright install" if prompted):
 ```plaintext
   orientx-classify --mode train
   orientx-scrape
@@ -111,7 +112,7 @@ Alternatively, to run with defaults:
   orientx-classify
   orientx-analyze
 ```
-Or, to run as a pipeline without generating intermediary files:
+Or, to run as a pipeline without generating intermediary files (enter "playwright install" if prompted):
 ```plaintext
   orientx
 ```
