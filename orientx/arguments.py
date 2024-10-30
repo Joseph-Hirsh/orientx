@@ -37,7 +37,7 @@ def validate_arguments(args, module_name):
 
     if hasattr(args, 'input_path'):
         if module_name in ['classifier', 'analyzer']:
-            if not (os.path.isfile(args.input_path) and args.input_path.endswith('.csv')):
+            if (hasattr(args, 'mode') and args.mode == 'inference') and not (os.path.isfile(args.input_path) and args.input_path.endswith('.csv')):
                 print_argument_error(
                     f"input_path must be a valid existing .csv file for {module_name}, got {args.input_path}")
                 exit()
@@ -56,7 +56,7 @@ def validate_arguments(args, module_name):
         exit()
 
     if hasattr(args, 'model_path'):
-        if not (args.model_path.endswith('.pth') and os.path.isfile(args.model_path)):
+        if (hasattr(args, 'mode') and args.mode == 'inference') and not (args.model_path.endswith('.pth') and os.path.isfile(args.model_path)):
             print_argument_error(f"model_path must be a valid path to a .pth file, got {args.model_path}")
             exit()
 
