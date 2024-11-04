@@ -47,7 +47,7 @@ OrientX is a Python-based tool designed to classify x.com posts. Though initiall
 6. Install the plugin:
 
     ```pip install .```
-7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. It is advised to add more than one account.
+7. Add X account credentials to `assets/credentials.ini` (use accounts that you would not mind getting banned!). The credentials file contains a template, so adding accounts should be straightforward. You should probably add more than one account.
 
 8. You may be asked to enter `playwright install` when you scrape for the first time. You can do that now, or when prompted. 
 
@@ -132,7 +132,7 @@ Or, to run as a pipeline without generating intermediary files (enter "playwrigh
 - **Key Features:** fine-tunes a pre-trained BERT model with given hyperparameters, performs semantic classification with such model.
 
 ### analyzer
-- **Description:** analyzes and visualizes classified tweets.
+- **Description:** analyzes and visualizes classified tweets (the actual analysis and visualization is more of just a proof of concept than my actual research analysis).
 - **Key Features:** outputs graphs of tweet engagement over time, statistical test results.
 
 
@@ -140,4 +140,4 @@ Or, to run as a pipeline without generating intermediary files (enter "playwrigh
 This project is licensed under the BSD 3-Clause. See the LICENSE file for details.
 
 ## Acknowledgments
-- Thank you Professor Jeremy Ferwerda for letting me geek out on data science as part of my populism research!
+- Thanks Professor Ferwerda for letting me geek out on data science as part of my populism project.
