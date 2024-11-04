@@ -1,6 +1,6 @@
 # OrientX
 
-*Note: This project is nascent. It lacks sufficient printing/logging, error handling, documentation, unit tests, and config files for constants. One can also imagine numerous feature and user-experience updates.*
+*Note: This project is nascent. It lacks sufficient printing/logging, error handling, documentation, unit tests, and config files for constants. One can also imagine numerous feature and user-experience updates. Further, it requires a fast Internet connection to work properly.*
 
 ## Project Overview
 OrientX is a Python-based tool designed to classify x.com posts. Though initially developed to support a study on input-oriented and output-oriented rhetorical modes in populist social media posts, it can serve as an analytical tool for numerous other purposes that demand efficient and free x.com scraping, parsing, classification, and analyses.
