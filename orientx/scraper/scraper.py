@@ -1,5 +1,6 @@
 import configparser
 import json
+import sys
 import time
 import asyncio
 from hashlib import md5
@@ -17,7 +18,6 @@ from ..printer import (
 )
 
 
-# Helper Functions for Proxy and Browser Setup
 async def request_new_ip():
     try:
         with Controller.from_port(port=9051) as controller:
@@ -44,7 +44,7 @@ async def initialize_browser(headless=False, proxy_server='socks5://localhost:90
     await context.route("**/*", block_unnecessary_requests)
 
     page = await context.new_page()
-    page.on('console', lambda msg: print(f"Console log: {msg.text}"))
+    # page.on('console', lambda msg: print(f"Console log: {msg.text}"))
 
     await verify_proxy(context)
 
@@ -66,9 +66,8 @@ async def verify_proxy(context):
     await page.close()
 
 
-# Account Scraping and Login Functions
 async def scrape_account(account_id, account_url, num_posts=100, headless=False, account_index=0,
-                         session_file="user_session.json"):
+                         session_file="session.json"):
     username, password, email = load_account_credentials(account_index)
     print_scraper_new_scrape_heading(account_id, num_posts, username)
 
@@ -143,12 +142,13 @@ async def handle_security_prompt(page, email):
         await page.wait_for_selector("span:has-text('Phone or email')", timeout=5000)
     except:
         return
+
     print_scraper_passing_extra_security()
+
     await page.fill("input[name='text']", email)
     await page.click("button:has(div:has(span:has(span:has_text('Next'))))")
 
 
-# Scraping Functions
 async def scrape_account_posts(page, account_url, target_post_count=100, scroll_delay_range=(1.5, 3),
                                long_pause_frequency=8):
     await page.goto(account_url)
@@ -170,6 +170,8 @@ async def scrape_account_posts(page, account_url, target_post_count=100, scroll_
                 unique_posts.add(post_hash)
                 collected_posts.append(content)
 
+                print((len(collected_posts) / target_post_count) * 100)
+
             if len(collected_posts) >= target_post_count:
                 return True
         return False
@@ -184,7 +186,7 @@ async def scrape_account_posts(page, account_url, target_post_count=100, scroll_
 
         if scroll_count % long_pause_frequency == 0:
             long_pause = random.uniform(15, 30)
-            print(f"Taking a long pause for {long_pause:.2f} seconds...")
+            print(f"\nTaking a long pause for {long_pause:.2f} seconds...")
             await asyncio.sleep(long_pause)
 
     return collected_posts[:target_post_count]
@@ -198,7 +200,6 @@ async def scroll_page(page, delay_range=(2, 5)):
     await asyncio.sleep(delay)
 
 
-# Utility Functions
 def load_account_credentials(account_index, credentials_file="assets/credentials.ini"):
     config = configparser.ConfigParser()
     config.read(credentials_file)
@@ -209,8 +210,7 @@ def load_account_credentials(account_index, credentials_file="assets/credentials
     return credentials["username"], credentials["password"], credentials["email"]
 
 
-# Scraping Multiple Accounts
-async def scrape_x_accounts(account_data, num_posts=100, batch_size=1, headless=False):
+async def scrape_multiple_accounts(account_data, num_posts=100, batch_size=2, headless=False):
     start_time = time.time()
     tasks = [
         scrape_account(account_id, account_url, num_posts, headless, i)
@@ -218,6 +218,7 @@ async def scrape_x_accounts(account_data, num_posts=100, batch_size=1, headless=
     ]
 
     scraped_data = {}
+
     for batch_start in range(0, len(tasks), batch_size):
         batch_tasks = tasks[batch_start:batch_start + batch_size]
         results = await asyncio.gather(*batch_tasks, return_exceptions=True)
@@ -226,4 +227,5 @@ async def scrape_x_accounts(account_data, num_posts=100, batch_size=1, headless=
             scraped_data[account_id] = result
 
     print_scraper_metrics(time.time(), start_time, scraped_data, num_posts * len(account_data))
+
     return scraped_data

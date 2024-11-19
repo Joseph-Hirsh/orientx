@@ -4,7 +4,7 @@ import json
 from orientx import config
 from orientx.arguments import create_parser, validate_arguments
 from orientx.printer import print_parameters
-from .scraper import scrape_x_accounts
+from .scraper import scrape_multiple_accounts
 
 
 async def async_main():
@@ -16,7 +16,7 @@ async def async_main():
     print_parameters(args)
 
     accounts_dict = json.loads(args.accounts)
-    scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts, batch_size=args.scrape_batch_size)
+    scraped_data = await scrape_multiple_accounts(accounts_dict, num_posts=args.num_posts, batch_size=args.scrape_batch_size)
 
     with open(args.output_path, 'w') as json_file:
         json.dump(scraped_data, json_file, indent=4)

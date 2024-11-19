@@ -6,7 +6,7 @@ from orientx import config
 from orientx.arguments import create_parser, validate_arguments
 from orientx.analyzer import analyze_posts_data
 from orientx.printer import print_driver_df, print_parameters
-from orientx.scraper import scrape_x_accounts
+from orientx.scraper import scrape_multiple_accounts
 from orientx.parser import parse_x_posts
 from orientx.classifier import classify_x_posts, load_data, ClassificationPipeline
 
@@ -18,8 +18,8 @@ def run_orientx(args):
     pipeline.load_model(args.model_path)
 
     async def async_main():
-        scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts,
-                                               batch_size=args.scrape_batch_size)
+        scraped_data = await scrape_multiple_accounts(accounts_dict, num_posts=args.num_posts,
+                                                      batch_size=args.scrape_batch_size)
         parsed_df = parse_x_posts(scraped_data)
         classifications_df = classify_x_posts(pipeline, parsed_df)
 
