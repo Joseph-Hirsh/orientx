@@ -1,146 +1,229 @@
 import configparser
+import json
 import time
 import asyncio
 from hashlib import md5
+import random
 from playwright.async_api import async_playwright
-from ..printer import print_scraper_no_posts_found, print_scraper_metrics, print_scraper_new_scrape_heading, \
-    print_scraper_error, print_scraper_passing_extra_security
+import os
+from stem import Signal
+from stem.control import Controller
+from ..printer import (
+    print_scraper_no_posts_found,
+    print_scraper_metrics,
+    print_scraper_new_scrape_heading,
+    print_scraper_error,
+    print_scraper_passing_extra_security,
+)
 
 
-async def login(page, username, password, email):
-    await page.goto("https://x.com/login", wait_until="networkidle")
-    await page.fill("input[name='text']", username)
-    await page.click("button:has(div:has(span:has-text('Next')))")
-
+# Helper Functions for Proxy and Browser Setup
+async def request_new_ip():
     try:
-        await page.wait_for_selector("span:has-text('Phone or email')", timeout=2000)
-    except:
-        pass
-
-    if await page.is_visible("span:has-text('Phone or email')"):
-        print_scraper_passing_extra_security()
-
-        await page.fill("input[name='text']", email)
-        await page.click("button:has(div:has(span:has(span:has-text('Next'))))")
-
-    await page.wait_for_selector("input[name='password']")
-    await page.fill("input[name='password']", password)
-    await page.click("button:has(div:has(span:has(span:has-text('Log in'))))")
-
-    await page.wait_for_selector("div:has-text('What is happening?')", timeout=5000)
+        with Controller.from_port(port=9051) as controller:
+            controller.authenticate("one")
+            controller.signal(Signal.NEWNYM)
+            print("Requested new IP address from Tor")
+    except Exception as e:
+        print(f"Error requesting new IP: {e}")
 
 
-async def load_credentials(account_index):
-    config = configparser.ConfigParser()
-    config.read("assets/credentials.ini")
-    account_section = config.sections()[account_index % len(config.sections())]
-    credentials = config[account_section]
+async def initialize_browser(headless=False, proxy_server='socks5://localhost:9050'):
+    await request_new_ip()
 
-    return credentials["username"], credentials["password"], credentials["email"]
-
-
-async def initialize_browser(headless=False):
     playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(headless=headless)
+
+    launch_options = {
+        "headless": headless,
+        "proxy": {"server": proxy_server} if proxy_server else None,
+        "args": []
+    }
+
+    browser = await playwright.chromium.launch(**launch_options)
     context = await browser.new_context()
-    await context.route("**/*", block_non_essential_requests)
+    await context.route("**/*", block_unnecessary_requests)
 
-    return playwright, browser, context
+    page = await context.new_page()
+    page.on('console', lambda msg: print(f"Console log: {msg.text}"))
+
+    await verify_proxy(context)
+
+    return playwright, context, page
 
 
-async def block_non_essential_requests(route, request):
+async def block_unnecessary_requests(route, request):
     if request.resource_type in {"image", "media", "stylesheet", "font", "other"}:
         await route.abort()
     else:
         await route.continue_()
 
 
-async def scrape_posts(page, url, num_posts=100, mode="auto", check_interval=0.001):
-    await page.goto(url)
-    await page.wait_for_timeout(10000)
-
-    post_hashes, complete_posts = set(), []
-
-    async def collect_new_posts():
-        posts = await page.query_selector_all("article")
-        for post in posts:
-            text_content = await post.inner_text()
-
-            split_static_text_content = text_content.split("\n")[:5]
-            static_text_content = "\n".join(split_static_text_content)
-
-            post_hash = md5(static_text_content.encode('utf-8')).hexdigest()
-
-            if post_hash not in post_hashes:
-                post_hashes.add(post_hash)
-                complete_posts.append(text_content)
-
-            if len(complete_posts) >= num_posts:
-                return True
-        return False
-
-    if mode == "auto":
-        while len(complete_posts) < num_posts:
-            if await collect_new_posts():
-                break
-            await page.evaluate("window.scrollBy(0, window.innerHeight);")
-            await asyncio.sleep(0.5)
-    else:
-        while len(complete_posts) < num_posts:
-            await collect_new_posts()
-            await asyncio.sleep(check_interval)
-
-    return complete_posts[:num_posts]
+async def verify_proxy(context):
+    page = await context.new_page()
+    response = await page.goto('https://httpbin.org/ip')
+    ip_data = await response.json()
+    print(f"Current IP address via proxy: {ip_data['origin']}")
+    await page.close()
 
 
-async def login_and_scrape_x_posts(account_id, url, num_posts=100, headless=False, account_index=0, mode="auto"):
-    username, password, email = await load_credentials(account_index)
+# Account Scraping and Login Functions
+async def scrape_account(account_id, account_url, num_posts=100, headless=False, account_index=0,
+                         session_file="user_session.json"):
+    username, password, email = load_account_credentials(account_index)
     print_scraper_new_scrape_heading(account_id, num_posts, username)
 
+    collected_posts = []
     try:
-        playwright, browser, context = await initialize_browser(headless=headless)
-        page = await context.new_page()
+        playwright, context, page = await initialize_browser(headless=headless)
 
-        await login(page, username, password, email)
-        posts = await scrape_posts(page, url, num_posts=num_posts, mode=mode)
-
-        if not posts:
+        await load_or_update_session(context, page, username, password, email, session_file)
+        collected_posts = await scrape_account_posts(page, account_url, target_post_count=num_posts)
+        if not collected_posts:
             print_scraper_no_posts_found(account_id)
 
-        await browser.close()
+        await context.close()
         await playwright.stop()
-
-        return posts
     except Exception as e:
         print_scraper_error(account_id, e)
 
-        return []
+    return collected_posts
 
 
-async def scrape_x_accounts(accounts, num_posts=100, batch_size=2, headless=False, scroll_mode="auto"):
+def check_cookie_expiration(cookies):
+    current_time = time.time()
+
+    for cookie in cookies:
+        if cookie['expires'] == -1 or cookie['expires'] is None:
+            continue
+
+        if cookie['expires'] < current_time:
+            return True
+
+    return False
+
+
+async def load_or_update_session(context, page, username, password, email, session_file):
+    if os.path.exists(session_file) and os.path.getsize(session_file) > 0:
+        with open(session_file, "r") as f:
+            session_data = json.load(f)
+            if isinstance(session_data, list):
+                if check_cookie_expiration(session_data):
+                    await reenter_credentials_and_save_session(page, username, password, email, session_file, context)
+                else:
+                    await context.add_cookies(session_data)
+            else:
+                print("Invalid session data format.")
+    else:
+        print("Session file is either missing or empty.")
+        await reenter_credentials_and_save_session(page, username, password, email, session_file, context)
+
+
+async def reenter_credentials_and_save_session(page, username, password, email, session_file, context):
+    await enter_credentials(page, username, password, email)
+    session_data = await context.cookies()
+    with open(session_file, "w") as f:
+        json.dump(session_data, f)
+
+
+async def enter_credentials(page, username, password, email):
+    await page.goto("https://x.com/login", wait_until="networkidle")
+    await page.fill("input[name='text']", username)
+    await page.click("button:has(div:has(span:has-text('Next')))")
+
+    await handle_security_prompt(page, email)
+
+    await page.fill("input[name='password']", password)
+    await page.click("button:has(div:has(span:has(span:has-text('Log in'))))")
+
+    await page.wait_for_selector("div:has-text('What is happening?')", timeout=50000)
+
+
+async def handle_security_prompt(page, email):
+    try:
+        await page.wait_for_selector("span:has-text('Phone or email')", timeout=5000)
+    except:
+        return
+    print_scraper_passing_extra_security()
+    await page.fill("input[name='text']", email)
+    await page.click("button:has(div:has(span:has(span:has_text('Next'))))")
+
+
+# Scraping Functions
+async def scrape_account_posts(page, account_url, target_post_count=100, scroll_delay_range=(1.5, 3),
+                               long_pause_frequency=8):
+    await page.goto(account_url)
+    await page.wait_for_timeout(5000)
+
+    unique_posts = set()
+    collected_posts = []
+
+    async def extract_posts():
+        nonlocal collected_posts
+        posts = await page.query_selector_all("article")
+
+        for post in posts:
+            content = await post.inner_text()
+            static_preview = "\n".join(content.split("\n")[:5])
+            post_hash = md5(static_preview.encode("utf-8")).hexdigest()
+
+            if post_hash not in unique_posts:
+                unique_posts.add(post_hash)
+                collected_posts.append(content)
+
+            if len(collected_posts) >= target_post_count:
+                return True
+        return False
+
+    scroll_count = 0
+
+    while len(collected_posts) < target_post_count:
+        if await extract_posts():
+            break
+        await scroll_page(page, delay_range=scroll_delay_range)
+        scroll_count += 1
+
+        if scroll_count % long_pause_frequency == 0:
+            long_pause = random.uniform(15, 30)
+            print(f"Taking a long pause for {long_pause:.2f} seconds...")
+            await asyncio.sleep(long_pause)
+
+    return collected_posts[:target_post_count]
+
+
+async def scroll_page(page, delay_range=(2, 5)):
+    offset = random.uniform(200, 400)
+    await page.evaluate(f"window.scrollBy(0, {offset});")
+    delay = random.uniform(*delay_range)
+    print(f"Scrolling by {offset:.2f}px and waiting for {delay:.2f} seconds...")
+    await asyncio.sleep(delay)
+
+
+# Utility Functions
+def load_account_credentials(account_index, credentials_file="assets/credentials.ini"):
+    config = configparser.ConfigParser()
+    config.read(credentials_file)
+    account_sections = config.sections()
+    selected_account = account_sections[account_index % len(account_sections)]
+    credentials = config[selected_account]
+
+    return credentials["username"], credentials["password"], credentials["email"]
+
+
+# Scraping Multiple Accounts
+async def scrape_x_accounts(account_data, num_posts=100, batch_size=1, headless=False):
     start_time = time.time()
-    account_items = list(accounts.items())
-    scraped_posts = {}
-
     tasks = [
-        login_and_scrape_x_posts(account_id, url, num_posts=num_posts, headless=headless, account_index=i,
-                                 mode=scroll_mode)
-        for i, (account_id, url) in enumerate(account_items)
+        scrape_account(account_id, account_url, num_posts, headless, i)
+        for i, (account_id, account_url) in enumerate(account_data.items())
     ]
 
-    if scroll_mode == "manual":
-        for i, task in enumerate(tasks):
-            result = await task
-            account_id, _ = account_items[i]
-            scraped_posts[account_id] = result
-    else:
-        for i in range(0, len(tasks), batch_size):
-            results = await asyncio.gather(*tasks[i:i + batch_size], return_exceptions=True)
-            scraped_posts.update(
-                {account_id: result for (account_id, _), result in zip(account_items[i:i + batch_size], results)}
-            )
+    scraped_data = {}
+    for batch_start in range(0, len(tasks), batch_size):
+        batch_tasks = tasks[batch_start:batch_start + batch_size]
+        results = await asyncio.gather(*batch_tasks, return_exceptions=True)
 
-    print_scraper_metrics(time.time(), start_time, scraped_posts, num_posts * len(accounts))
+        for (account_id, _), result in zip(list(account_data.items())[batch_start:batch_start + batch_size], results):
+            scraped_data[account_id] = result
 
-    return scraped_posts
-
+    print_scraper_metrics(time.time(), start_time, scraped_data, num_posts * len(account_data))
+    return scraped_data

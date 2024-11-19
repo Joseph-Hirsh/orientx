@@ -107,8 +107,8 @@ def add_scraper_arguments(argument_parser, individual=True):
     argument_parser.add_argument(
         '--scrape_batch_size',
         type=int,
-        default=2,
-        help='Batch size for scraping accounts in parallel (default: 2)'
+        default=1,
+        help='Batch size for scraping accounts in parallel (default: 1)'
     )
     argument_parser.add_argument(
         '--scroll_mode',

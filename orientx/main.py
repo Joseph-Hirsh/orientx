@@ -19,7 +19,7 @@ def run_orientx(args):
 
     async def async_main():
         scraped_data = await scrape_x_accounts(accounts_dict, num_posts=args.num_posts,
-                                               batch_size=args.scrape_batch_size, scroll_mode=args.scroll_mode)
+                                               batch_size=args.scrape_batch_size)
         parsed_df = parse_x_posts(scraped_data)
         classifications_df = classify_x_posts(pipeline, parsed_df)
 
